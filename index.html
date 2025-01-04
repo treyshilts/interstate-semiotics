@@ -5,71 +5,17 @@
     <style> body { font-family: times-new-roman; } </style>
 </head>
 <body>
-    <div style="margin: 0 auto; width: 50%; text-align: center;">
-        <h1>etc.</h1>
-        <p>internet posts and writing of trey shilts
-        </p>
-        <h1 style="text-align: center;">~*~</h1>
-<div id="substack-feed-embed"></div>
-
-<style>
-    body {
-        font-family: 'Times New Roman', serif;
-        margin: 20px;
-    }
-    h1 {
-        font-size: 36px;
-    }
-    .post-title {
-        cursor: pointer;
-        color: #0010FF;
-        font-weight: bold;
-        margin-bottom: 5px;
-        text-decoration: none;
-        display: block;
-        border-bottom: 1px solid #000;
-        padding-bottom: 5px;
-    }
-    .post-content {
-        display: none;
-        padding: 10px;
-        border: 1px solid #ccc;
-        margin-top: 5px;
-        background: #f9f9f9;
-    }
-</style>
-
-<script>
-    async function loadSubstackFeed() {
-        const response = await fetch('https://bathroomposting.substack.com/feed');
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, "text/xml");
-        const items = xml.querySelectorAll("item");
-
-        let feedHtml = "";
-        items.forEach((item, index) => {
-            const title = item.querySelector("title").textContent;
-            const content = item.querySelector("description").textContent;
-            feedHtml += `
-                <div>
-                    <a class="post-title" onclick="togglePost(${index})">${title}</a>
-                    <div class="post-content" id="post-${index}">${content}</div>
-                </div>
-            `;
-        });
-
-        document.getElementById("substack-feed-embed").innerHTML = feedHtml;
-    }
-
-    function togglePost(index) {
-        const postElement = document.getElementById(`post-${index}`);
-        postElement.style.display = (postElement.style.display === "none") ? "block" : "none";
-    }
-
-    loadSubstackFeed();
-</script>
+    <div style="display: flex; gap: 20px;">
+    <div style="flex: 1; padding: 10px;">
+        <h1>etc</h1>
+        <br>
+        <p>trey shilts</p>
+    </div>
+    <div style="flex: 1; padding: 10px;">
+        <img src="interstatepic.png" alt="Interstate Image" width="500px">
 
     </div>
+</div>
+    
 </body>
 </html>
