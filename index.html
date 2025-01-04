@@ -35,7 +35,7 @@
                         <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                         ${firstImage} 
                         <div>${item.content}</div> 
-                        <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
+                        <p>${new Date(item.pubDate).toLocaleDateString()}</p>
                     `;
         
                     feedContainer.appendChild(postElement);
