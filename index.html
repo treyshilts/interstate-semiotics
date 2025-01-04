@@ -12,9 +12,8 @@
         <p>ongoing internet posts and writing of trey shilts</p>
         <br>
         <p> <a href="https://bathroomposting.substack.com/">email list</a> | <a href="https://www.finnishpostcard.com/">finnish postcard site</a> </p>
-    <h1>Trey Shilts - Substack Feed</h1>
-    <div id="feed">Loading feed...</div>
-
+    <h1>/*/*/*/*/*/*/*/*/</h1>
+    <div id="feed">Loading...</div>
     <script>
         async function fetchSubstackFeed() {
             const url = 'https://bathroomposting.substack.com/feed';
@@ -23,24 +22,28 @@
             
             const feedContainer = document.getElementById('feed');
             feedContainer.innerHTML = '';
-
+    
             data.items.slice(0, 5).forEach(item => {
                 const postElement = document.createElement('div');
                 postElement.classList.add('post');
+    
+                // Display full description with images
                 postElement.innerHTML = `
                     <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
-                    <p>${item.description}</p>
+                    <div>${item.content}</div> 
                     <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
                 `;
+    
                 feedContainer.appendChild(postElement);
             });
         }
-
+    
         fetchSubstackFeed();
     </script>
+
     </div>
     <div style="flex: 1; padding: 10px;">
-        <img src="interstatepic.png" alt="Interstate Image" width="100px">
+        <img src="interstatepic.png" alt="Interstate Image" width="400px">
     </div>
 </div>
     
