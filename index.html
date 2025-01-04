@@ -8,24 +8,21 @@
     <p>internet writing of trey shilts 
     </p>
     <h1><u>posts</u></h1>
-       <ul id="substack-feed"></ul>
+        <div id="substack-feed-embed"></div>
     
-    <script>
-        fetch('https://bathroomposting.substack.com/feed')
-            .then(response => response.text())
-            .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
-            .then(data => {
-                const items = data.querySelectorAll("item");
-                let html = "";
-                items.forEach(el => {
-                    let title = el.querySelector("title").textContent;
-                    let link = el.querySelector("link").textContent;
-                    html += `<li><a href="${link}" target="_blank">${title}</a></li>`;
-                });
-                document.getElementById("substack-feed").innerHTML = html;
-            });
-    </script>
+        <script>
+          window.SubstackFeedWidget = {
+            substackUrl: "bathroomposting.substack.com",
+            posts: 5,
+            hidden: ["author", "reactions"],
+            colors: {
+              primary: "#000000",
+              secondary: "#0010FF",
+              background: "#FFFFFF",
+            }
+          };
+        </script>
+        <script src="https://substackapi.com/embeds/feed.js" async></script>
 
-    
 </body>
 </html>
