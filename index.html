@@ -22,7 +22,7 @@
                 const feedContainer = document.getElementById('feed');
                 feedContainer.innerHTML = '';
         
-                data.items.slice(0, 100).forEach(item => {
+                data.items.forEach(item => {
                     const postElement = document.createElement('div');
                     postElement.classList.add('post');
         
