@@ -8,22 +8,55 @@
     <h1>interstate semiotics</h1>
     <p>collected (ongoing) internet writing of trey shilts 
     </p>
-    <h1>~*~</h1>
-        <div id="substack-feed-embed"></div>
-    
-        <script>
-          window.SubstackFeedWidget = {
-            substackUrl: "bathroomposting.substack.com",
-            posts: 50,
-            hidden: ["author", "reactions", "image"],
-            colors: {
-              primary: "#000000",
-              secondary: "#0010FF",
-              background: "#FFFFFF",
-            }
-          };
-        </script>
-        <script src="https://substackapi.com/embeds/feed.js" async></script>
+<h1>~*~</h1>
+<div id="substack-feed-embed"></div>
+
+<script>
+    window.SubstackFeedWidget = {
+        substackUrl: "bathroomposting.substack.com",
+        posts: 10, 
+        hidden: ["author", "reactions", "image"],
+        colors: {
+            primary: "#000000",
+            secondary: "#0010FF",
+            background: "#FFFFFF",
+        }
+    };
+
+    async function loadSubstackFeed() {
+        const response = await fetch('https://bathroomposting.substack.com/feed');
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, "text/xml");
+        const items = xml.querySelectorAll("item");
+
+        let feedHtml = "";
+        items.forEach((item, index) => {
+            const title = item.querySelector("title").textContent;
+            const content = item.querySelector("description").textContent;
+
+            feedHtml += `
+                <div style="margin-bottom: 10px;">
+                    <a href="#" onclick="togglePost(${index})" style="color: #0010FF; text-decoration: none;">
+                        ${title}
+                    </a>
+                    <div id="post-${index}" style="display: none; margin-top: 5px; border-top: 1px solid #000; padding-top: 5px;">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        });
+
+        document.getElementById("substack-feed-embed").innerHTML = feedHtml;
+    }
+
+    function togglePost(index) {
+        const postElement = document.getElementById(`post-${index}`);
+        postElement.style.display = (postElement.style.display === "none") ? "block" : "none";
+    }
+
+    loadSubstackFeed();
+</script>
 
 </body>
 </html>
