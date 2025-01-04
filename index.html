@@ -8,10 +8,10 @@
     <p>collected (ongoing) internet posts and writing of trey shilts 
     </p>
     <h1>etc.</h1>h1>
-    <ul id="substack-feed"></ul>
-
+       <ul id="substack-feed"></ul>
+    
     <script>
-        fetch('https://interstate-semiotics.substack.com/feed')
+        fetch('https://bathroomposting.substack.com/feed')
             .then(response => response.text())
             .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
             .then(data => {
@@ -25,6 +25,7 @@
                 document.getElementById("substack-feed").innerHTML = html;
             });
     </script>
+
     
 </body>
 </html>
