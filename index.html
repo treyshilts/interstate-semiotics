@@ -34,19 +34,25 @@
                 const postElement = document.createElement('div');
                 postElement.classList.add('post');
     
-                // Attempt to extract and scale the first image to 20%
+                // Parse the content and hide all images except the featured one
                 const parser = new DOMParser();
                 const contentDoc = parser.parseFromString(item.content, 'text/html');
-                contentDoc.querySelectorAll('img').forEach(img => {
-                    img.style.width = '20%';
-                    img.style.height = 'auto';
-                });
 
+                // Attempt to extract and display the first image only
                 const firstImageElement = contentDoc.querySelector('img');
                 let firstImage = '';
                 if (firstImageElement) {
+                    firstImageElement.style.width = '20%';
+                    firstImageElement.style.height = 'auto';
                     firstImage = firstImageElement.outerHTML;
                 }
+
+                // Remove all other images from the content
+                contentDoc.querySelectorAll('img').forEach((img, index) => {
+                    if (index !== 0) {
+                        img.remove();
+                    }
+                });
     
                 postElement.innerHTML = `
                     <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
