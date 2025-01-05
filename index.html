@@ -13,8 +13,8 @@
     <p>ongoing internet posts and writing of trey shilts</p>
     <br>
     <p> 
-        <a href="https://bathroomposting.substack.com/">email list</a> | 
-        <a href="https://www.finnishpostcard.com/">finnish postcard site</a>
+        <a href="https://www.finnishpostcard.com/">finnish postcard site</a> | 
+        <a href="https://bathroomposting.substack.com/">email list</a> | <a href="https://bathroomposting.substack.com/archive">blog archive</a>
     </p>
     <br>
     <h3>/*/*/*/*/*/*/*/*/</h3>
@@ -30,7 +30,7 @@
             const feedContainer = document.getElementById('feed');
             feedContainer.innerHTML = '';
     
-            data.items.forEach(item => {
+            data.items.slice(0, 5).forEach(item => {
                 const postElement = document.createElement('div');
                 postElement.classList.add('post');
     
@@ -58,7 +58,7 @@
                     <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                     ${firstImage} 
                     <div>${contentDoc.body.innerHTML}</div> 
-                    <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
+                    <p><strong>${new Date(item.pubDate).toLocaleDateString()}</strong></p>
                 `;
     
                 feedContainer.appendChild(postElement);
