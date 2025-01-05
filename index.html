@@ -34,21 +34,24 @@
                 const postElement = document.createElement('div');
                 postElement.classList.add('post');
     
-                // Attempt to extract the first image from the content and scale it to 20% of its original size
+                // Attempt to extract and scale the first image to 20%
                 const parser = new DOMParser();
                 const contentDoc = parser.parseFromString(item.content, 'text/html');
+                contentDoc.querySelectorAll('img').forEach(img => {
+                    img.style.width = '20%';
+                    img.style.height = 'auto';
+                });
+
                 const firstImageElement = contentDoc.querySelector('img');
                 let firstImage = '';
                 if (firstImageElement) {
-                    firstImageElement.style.width = '20%';
-                    firstImageElement.style.height = 'auto';
                     firstImage = firstImageElement.outerHTML;
                 }
     
                 postElement.innerHTML = `
                     <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                     ${firstImage} 
-                    <div>${item.content}</div> 
+                    <div>${contentDoc.body.innerHTML}</div> 
                     <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
                 `;
     
