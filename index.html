@@ -29,7 +29,7 @@
                 const feedContainer = document.getElementById('feed');
                 feedContainer.innerHTML = '';
         
-                data.items.slice(0, 5).forEach(item => {
+                data.items.slice(0, 50).forEach(item => {
                     const postElement = document.createElement('div');
                     postElement.classList.add('post');
         
@@ -48,7 +48,7 @@
                         <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                         ${firstImage} 
                         <div>${content}</div> 
-                        <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
+                        <p> ${new Date(item.pubDate).toLocaleDateString()}</p>
                     `;
         
                     feedContainer.appendChild(postElement);
