@@ -34,12 +34,17 @@
                 const postElement = document.createElement('div');
                 postElement.classList.add('post');
     
-                // Attempt to extract the first image from the content if available
+                // Attempt to extract the first image from the content and scale it to 20% of its original size
                 const parser = new DOMParser();
                 const contentDoc = parser.parseFromString(item.content, 'text/html');
-                const firstImage = contentDoc.querySelector('img')?.outerHTML || '';
+                const firstImageElement = contentDoc.querySelector('img');
+                let firstImage = '';
+                if (firstImageElement) {
+                    firstImageElement.style.width = '20%';
+                    firstImageElement.style.height = 'auto';
+                    firstImage = firstImageElement.outerHTML;
+                }
     
-                // Fixed use of template literals with backticks
                 postElement.innerHTML = `
                     <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                     ${firstImage} 
