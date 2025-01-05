@@ -16,40 +16,35 @@
         <a href="https://bathroomposting.substack.com/">email list</a> | 
         <a href="https://www.finnishpostcard.com/">finnish postcard site</a>
     </p>
+    <br>
     <h3>/*/*/*/*/*/*/*/*/</h3>
-
+    <br>
     <div id="feed"></div>
 
         <script>
             async function fetchSubstackFeed() {
                 const url = 'https://bathroomposting.substack.com/feed';
-                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+                const response = await fetch(https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)});
                 const data = await response.json();
                 
                 const feedContainer = document.getElementById('feed');
                 feedContainer.innerHTML = '';
         
-                data.items.slice(0, 50).forEach(item => {
+                data.items.forEach(item => {
                     const postElement = document.createElement('div');
                     postElement.classList.add('post');
         
-                    // Check for content:encoded field and fall back to description if unavailable
-                    const content = item.content || item.description;
-                    
-                    // Use a DOMParser to ensure HTML is rendered properly
+                    // Attempt to extract the first image from the content if available
                     const parser = new DOMParser();
-                    const parsedContent = parser.parseFromString(content, 'text/html');
+                    const contentDoc = parser.parseFromString(item.content, 'text/html');
+                    const firstImage = contentDoc.querySelector('img')?.outerHTML || '';
         
-                    // Extract the first image from content
-                    const firstImage = parsedContent.querySelector('img') ? parsedContent.querySelector('img').outerHTML : '';
-        
-                    // Corrected use of full content including images
-                    postElement.innerHTML = `
+                    postElement.innerHTML = 
                         <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                         ${firstImage} 
-                        <div>${content}</div> 
-                        <p> ${new Date(item.pubDate).toLocaleDateString()}</p>
-                    `;
+                        <div>${item.content}</div> 
+                        <p>${new Date(item.pubDate).toLocaleDateString()}</p>
+                    ;
         
                     feedContainer.appendChild(postElement);
                 });
