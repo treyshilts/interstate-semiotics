@@ -26,58 +26,54 @@
     <p>ongoing internet posts and writing of trey shilts</p>
     <br>
     <p> 
-        <a href="https://bathroomposting.substack.com/">email list</a> | <a href="https://bathroomposting.substack.com/archive">archive</a> | 
+        <a href="https://bathroomposting.substack.com/">my email list</a> | <a href="https://bathroomposting.substack.com/archive">archive</a> | 
         <a href="https://www.finnishpostcard.com/">finnish postcard site</a>
     </p>
     <br>
     <h3>/*/*/*/*/*/*/*/*/</h3>
     <br>
     <div id="feed"></div>
-
-    <script>
-        async function fetchSubstackFeed() {
-            const url = 'https://bathroomposting.substack.com/feed';
-            const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
-            const data = await response.json();
-            
-            const feedContainer = document.getElementById('feed');
-            feedContainer.innerHTML = '';
-    
-            data.items.forEach(item => {
-                const postElement = document.createElement('div');
-                postElement.classList.add('post');
-    
-                // Parse the content and hide all images except the featured one
-                const parser = new DOMParser();
-                const contentDoc = parser.parseFromString(item.content, 'text/html');
-
-                // Attempt to extract and display the first image only with the CSS class applied
-                const firstImageElement = contentDoc.querySelector('img');
-                let firstImage = '';
-                if (firstImageElement) {
-                    firstImageElement.classList.add('featured-image');
-                    firstImage = firstImageElement.outerHTML;
-                }
-
-                // Remove all other images from the content
-                contentDoc.querySelectorAll('img').forEach((img, index) => {
-                    if (index !== 0) {
-                        img.remove();
+        <script>
+            async function fetchSubstackFeed() {
+                const url = 'https://bathroomposting.substack.com/feed';
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                
+                const feedContainer = document.getElementById('feed');
+                feedContainer.innerHTML = '';
+        
+                data.items.forEach(item => {
+                    const postElement = document.createElement('div');
+                    postElement.classList.add('post');
+        
+                    // Parse the content to extract only the first image and remove others
+                    const parser = new DOMParser();
+                    const contentDoc = parser.parseFromString(item.content, 'text/html');
+        
+                    // Extract the first image (featured image) and remove all other images
+                    const firstImageElement = contentDoc.querySelector('img');
+                    let firstImage = '';
+                    if (firstImageElement) {
+                        firstImageElement.classList.add('featured-image');
+                        firstImage = firstImageElement.outerHTML;
                     }
+        
+                    // Remove all images from the content
+                    contentDoc.querySelectorAll('img').forEach(img => img.remove());
+        
+                    postElement.innerHTML = `
+                        <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
+                        ${firstImage} 
+                        <div>${contentDoc.body.innerHTML}</div> 
+                        <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
+                    `;
+        
+                    feedContainer.appendChild(postElement);
                 });
-    
-                postElement.innerHTML = `
-                    <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
-                    ${firstImage} 
-                    <div>${contentDoc.body.innerHTML}</div> 
-                    <p><strong>Published:</strong> ${new Date(item.pubDate).toLocaleDateString()}</p>
-                `;
-    
-                feedContainer.appendChild(postElement);
-            });
-        }
-    
-        fetchSubstackFeed();
-    </script>
+            }
+        
+            fetchSubstackFeed();
+        </script>
+
 </body>
 </html>
