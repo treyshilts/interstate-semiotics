@@ -16,11 +16,6 @@
             .featured-image {
                 width: 50%; /* 30% larger than the default 20% */
             }
-        }
-        #three-container {
-            width: 200px;
-            height: 200px;
-        }
     </style>
 </head>
 <body>
@@ -34,35 +29,10 @@
         <a href="https://www.finnishpostcard.com/">finnish postcard site</a>
     </p>
     <br>
-    <div id="three-container"></div>
-    <br>
     <h3>/*/*/*/*/*/*/*/*/</h3>
     <br>
     <div id="feed"></div>
         <script>
-            // Setup the scene, camera, and renderer
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-                const renderer = new THREE.WebGLRenderer();
-                renderer.setSize(200, 200);
-                document.getElementById('three-container').appendChild(renderer.domElement);
-        
-                // Create a rotating cube
-                const geometry = new THREE.BoxGeometry();
-                const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-                const cube = new THREE.Mesh(geometry, material);
-                scene.add(cube);
-        
-                camera.position.z = 5;
-        
-                // Animation loop
-                function animate() {
-                    requestAnimationFrame(animate);
-                    cube.rotation.x += 0.01;
-                    cube.rotation.y += 0.01;
-                    renderer.render(scene, camera);
-                }
-                animate();
             async function fetchSubstackFeed() {
                 const url = 'https://bathroomposting.substack.com/feed';
                 const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
