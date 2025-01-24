@@ -25,8 +25,8 @@
     <p>ongoing internet posts and writing of trey shilts</p>
     <br>
     <p> 
-        <a href="https://bathroomposting.substack.com/">my email list</a> | <a href="https://bathroomposting.substack.com/archive">writing archive</a> | 
-        <a href="https://www.finnishpostcard.com/">finnish postcard site</a>
+        <a href="https://bathroomposting.substack.com/">HOW TO TO REMAIN</a> | <a href="https://bathroomposting.substack.com/archive">HOW TO SEE archive</a> | 
+        <a href="https://www.finnishpostcard.com/">HOW TO FEEL</a>
     </p>
     <br>
     <h3>/*/*/*/*/*/*/*/*/</h3>
@@ -59,7 +59,9 @@
         
                     // Remove all images from the content
                     contentDoc.querySelectorAll('img').forEach(img => img.remove());
-        
+
+                    contentDoc.querySelectorAll('.image-link-expand').forEach(el => el.remove());
+
                     postElement.innerHTML = `
                         <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
                         ${firstImage} 
