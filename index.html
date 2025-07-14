@@ -143,15 +143,41 @@ body *::-webkit-scrollbar-corner {
 <div id="questionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; max-width:90%; width:400px; border-radius:8px;">
     <h2>anonymously ask a question</h2>
-    <form action="https://formspree.io/f/myzpgqpo" method="POST">
+    <form id="questionForm">
       <textarea name="message" maxlength="500" required placeholder="Type your question..." style="width:100%; height:100px; resize:none; font-family:inherit;"></textarea>
       <br><br>
-      <button type="submit">Submit</button>
-      <button type="button" onclick="document.getElementById('questionModal').style.display='none'">Cancel</button>
+      <button type="submit">submit</button>
+      <button type="button" onclick="document.getElementById('questionModal').style.display='none'">cancel</button>
     </form>
-      
+    <p id="thankYouMsg" style="display:none; color:green; font-style:italic; margin-top:10px;">your question was submitted</p>
   </div>
 </div>
+<script>
+  document.getElementById('questionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch("https://formspree.io/f/myzpgqpo", {
+      method: "POST",
+      body: formData,
+      headers: { "Accept": "application/json" }
+    })
+    .then(() => {
+      form.reset();
+      form.style.display = "none";
+      document.getElementById("thankYouMsg").style.display = "block";
+      setTimeout(() => {
+        document.getElementById('questionModal').style.display = 'none';
+        form.style.display = "block";
+        document.getElementById("thankYouMsg").style.display = "none";
+      }, 2000);
+    })
+    .catch(() => {
+      alert("There was a problem submitting your question. Please try again.");
+    });
+  });
+</script>
 </body>
 </html>
