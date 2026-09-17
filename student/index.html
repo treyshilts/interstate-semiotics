@@ -1,1 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>Student</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /*
+      The game itself is 256 × 224.
+
+      CSS makes it appear larger, but the browser still renders
+      the game at the original NES-like resolution.
+    */
+    #game {
+      width: 768px;
+      height: 672px;
+
+      background: #3a9b46;
+
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+
+      position: relative;
+      overflow: hidden;
+    }
+
+    /*
+      The coordinate system inside this element remains 256 × 224.
+      We scale the whole thing by exactly 3×.
+    */
+    #game-world {
+      width: 256px;
+      height: 224px;
+
+      position: absolute;
+      left: 0;
+      top: 0;
+
+      transform: scale(3);
+      transform-origin: top left;
+
+      image-rendering: pixelated;
+    }
+
+    #guy {
+      position: absolute;
+
+      /* Starting position */
+      left: 120px;
+      top: 100px;
+
+      image-rendering: pixelated;
+
+      /*
+        Do NOT set width/height here unless you want to
+        change the character's native GIF dimensions.
+      */
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="game">
+    <div id="game-world">
+      <img id="guy" src="guy_walk_D.gif" alt="">
+    </div>
+  </div>
+
+
+  <script>
+    const guy = document.getElementById("guy");
+
+    // ------------------------------------
+    // GAME SETTINGS
+    // ------------------------------------
+
+    const GAME_WIDTH = 256;
+    const GAME_HEIGHT = 224;
+
+    // Pixels traveled per second.
+    // Change this if he feels too fast/slow.
+    const MOVE_SPEED = 35;
+
+
+    // ------------------------------------
+    // CHARACTER POSITION
+    // ------------------------------------
+
+    let x = 120;
+    let y = 100;
+
+    let lastDirection = "D";
+
+
+    // ------------------------------------
+    // DIRECTIONAL GIFS
+    // ------------------------------------
+
+    const animations = {
+      U:  "guy_walk_U.gif",
+      UR: "guy_walk_UR.gif",
+      R:  "guy_walk_R.gif",
+      DR: "guy_walk_DR.gif",
+      D:  "guy_walk_D.gif",
+      DL: "guy_walk_DL.gif",
+      L:  "guy_walk_L.gif",
+      UL: "guy_walk_UL.gif"
+    };
+
+
+    // ------------------------------------
+    // KEYBOARD INPUT
+    // ------------------------------------
+
+    const keys = {};
+
+    window.addEventListener("keydown", event => {
+
+      if (
+        event.key === "ArrowUp" ||
+        event.key === "ArrowDown" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowRight"
+      ) {
+        event.preventDefault();
+      }
+
+      keys[event.key] = true;
+    });
+
+
+    window.addEventListener("keyup", event => {
+      keys[event.key] = false;
+    });
+
+
+    // ------------------------------------
+    // ANIMATION
+    // ------------------------------------
+
+    let currentAnimation = "";
+
+    function setAnimation(direction) {
+
+      const filename = animations[direction];
+
+      if (currentAnimation !== filename) {
+        guy.src = filename;
+        currentAnimation = filename;
+      }
+    }
+
+
+    // ------------------------------------
+    // GAME LOOP
+    // ------------------------------------
+
+    let previousTime = performance.now();
+
+    function gameLoop(currentTime) {
+
+      const deltaTime = (currentTime - previousTime) / 1000;
+      previousTime = currentTime;
+
+
+      let dx = 0;
+      let dy = 0;
+
+
+      // Arrow keys AND WASD work.
+
+      if (keys["ArrowUp"] || keys["w"] || keys["W"]) {
+        dy -= 1;
+      }
+
+      if (keys["ArrowDown"] || keys["s"] || keys["S"]) {
+        dy += 1;
+      }
+
+      if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
+        dx -= 1;
+      }
+
+      if (keys["ArrowRight"] || keys["d"] || keys["D"]) {
+        dx += 1;
+      }
+
+
+      const moving = dx !== 0 || dy !== 0;
+
+
+      if (moving) {
+
+        // Normalize diagonal movement so diagonal isn't faster.
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+        dx /= length;
+        dy /= length;
+
+
+        x += dx * MOVE_SPEED * deltaTime;
+        y += dy * MOVE_SPEED * deltaTime;
+
+
+        // Figure out which directional animation to use.
+
+        let direction = "";
+
+        if (dy < 0) direction += "U";
+        if (dy > 0) direction += "D";
+        if (dx < 0) direction += "L";
+        if (dx > 0) direction += "R";
+
+
+        lastDirection = direction;
+
+        setAnimation(direction);
+      }
+
+
+      // ------------------------------------
+      // KEEP CHARACTER INSIDE SCREEN
+      // ------------------------------------
+
+      const guyWidth = guy.naturalWidth || 16;
+      const guyHeight = guy.naturalHeight || 16;
+
+      x = Math.max(
+        0,
+        Math.min(GAME_WIDTH - guyWidth, x)
+      );
+
+      y = Math.max(
+        0,
+        Math.min(GAME_HEIGHT - guyHeight, y)
+      );
+
+
+      // Round to whole pixels.
+      // This prevents subpixel blur.
+
+      guy.style.left = Math.round(x) + "px";
+      guy.style.top = Math.round(y) + "px";
+
+
+      requestAnimationFrame(gameLoop);
+    }
+
+
+    requestAnimationFrame(gameLoop);
+
+  </script>
+
+</body>
+</html>
