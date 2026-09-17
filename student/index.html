@@ -1,58 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student</title>
 
-<title>Student</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: #111;
+    }
 
-<style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
 
-html,
-body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  background: #111;
-}
+    /* Hidden 256x224 game canvas */
+    #game {
+      display: none;
+    }
 
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-/* Original 256×224 game.
-   Serenity reads from this, but we don't display it. */
-#game {
-  display: none;
-}
-
-/* What the player actually sees */
-#crt {
-  width: 768px;
-  height: 672px;
-  display: block;
-}
-
-</style>
+    /* Visible CRT output */
+    #crt {
+      width: 768px;
+      height: 672px;
+      display: block;
+    }
+  </style>
 </head>
 
 <body>
 
-<canvas
-  id="game"
-  width="256"
-  height="224">
-</canvas>
-
-<canvas
-  id="crt"
-  width="768"
-  height="672">
-</canvas>
-
+<canvas id="game" width="256" height="224"></canvas>
+<canvas id="crt" width="768" height="672"></canvas>
 
 <script type="module">
 
@@ -63,17 +49,14 @@ import { CRTShader } from "./CRTShader.js";
 // GAME CANVAS
 // ============================================================
 
-const canvas =
-  document.getElementById("game");
-
-const ctx =
-  canvas.getContext("2d");
+const gameCanvas = document.getElementById("game");
+const ctx = gameCanvas.getContext("2d");
 
 ctx.imageSmoothingEnabled = false;
 
 
 // ============================================================
-// SETTINGS
+// GAME SETTINGS
 // ============================================================
 
 const GAME_WIDTH = 256;
@@ -81,13 +64,10 @@ const GAME_HEIGHT = 224;
 
 const MOVE_SPEED = 35;
 
-const BACKGROUND_COLOR =
-  "#3a9b46";
+const BACKGROUND_COLOR = "#3a9b46";
 
 const WALK_FPS = 5;
-
-const WALK_FRAME_TIME =
-  1000 / WALK_FPS;
+const WALK_FRAME_TIME = 1000 / WALK_FPS;
 
 
 // ============================================================
@@ -98,12 +78,10 @@ let x = 120;
 let y = 100;
 
 let lastDirection = "D";
-
 let moving = false;
 
 let walkFrame = 0;
 let walkTimer = 0;
-
 
 const directions = [
   "U",
@@ -162,104 +140,76 @@ for (const direction of directions) {
 
 const keys = {};
 
-window.addEventListener(
-  "keydown",
-  event => {
+window.addEventListener("keydown", event => {
 
-    const key =
-      event.key.toLowerCase();
+  const key = event.key.toLowerCase();
 
-    if (
-      key === "arrowup" ||
-      key === "arrowdown" ||
-      key === "arrowleft" ||
-      key === "arrowright"
-    ) {
-      event.preventDefault();
-    }
-
-    keys[key] = true;
+  if (
+    key === "arrowup" ||
+    key === "arrowdown" ||
+    key === "arrowleft" ||
+    key === "arrowright"
+  ) {
+    event.preventDefault();
   }
-);
+
+  keys[key] = true;
+});
 
 
-window.addEventListener(
-  "keyup",
-  event => {
+window.addEventListener("keyup", event => {
 
-    keys[event.key.toLowerCase()] =
-      false;
+  keys[event.key.toLowerCase()] = false;
+
+});
+
+
+window.addEventListener("blur", () => {
+
+  for (const key in keys) {
+    keys[key] = false;
   }
-);
 
-
-window.addEventListener(
-  "blur",
-  () => {
-
-    for (const key in keys) {
-      keys[key] = false;
-    }
-  }
-);
+});
 
 
 // ============================================================
 // UPDATE GAME
 // ============================================================
 
-function update(
-  deltaTime,
-  deltaMilliseconds
-) {
+function update(deltaTime, deltaMilliseconds) {
 
   let dx = 0;
   let dy = 0;
 
 
-  if (
-    keys["arrowup"] ||
-    keys["w"]
-  ) {
+  if (keys["arrowup"] || keys["w"]) {
     dy -= 1;
   }
 
-
-  if (
-    keys["arrowdown"] ||
-    keys["s"]
-  ) {
+  if (keys["arrowdown"] || keys["s"]) {
     dy += 1;
   }
 
-
-  if (
-    keys["arrowleft"] ||
-    keys["a"]
-  ) {
+  if (keys["arrowleft"] || keys["a"]) {
     dx -= 1;
   }
 
-
-  if (
-    keys["arrowright"] ||
-    keys["d"]
-  ) {
+  if (keys["arrowright"] || keys["d"]) {
     dx += 1;
   }
 
 
-  const wasMoving =
-    moving;
+  const wasMoving = moving;
 
   moving =
     dx !== 0 ||
     dy !== 0;
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // MOVEMENT
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (moving) {
 
@@ -284,71 +234,55 @@ function update(
       deltaTime;
 
 
-    // Direction
+    // Determine direction
 
     let direction = "";
 
-    if (dy < 0) {
-      direction += "U";
-    }
-
-    if (dy > 0) {
-      direction += "D";
-    }
-
-    if (dx < 0) {
-      direction += "L";
-    }
-
-    if (dx > 0) {
-      direction += "R";
-    }
+    if (dy < 0) direction += "U";
+    if (dy > 0) direction += "D";
+    if (dx < 0) direction += "L";
+    if (dx > 0) direction += "R";
 
 
-    if (
-      direction !==
-      lastDirection
-    ) {
+    // Reset animation when direction changes
+
+    if (direction !== lastDirection) {
 
       walkFrame = 0;
       walkTimer = 0;
+
     }
 
 
-    lastDirection =
-      direction;
+    lastDirection = direction;
 
+
+    // Reset animation when beginning to walk
 
     if (!wasMoving) {
 
       walkFrame = 0;
       walkTimer = 0;
+
     }
 
 
-    // ========================================================
-    // 5 FPS WALK CYCLE
-    // ========================================================
+    // --------------------------------------------------------
+    // 5 FPS WALK ANIMATION
+    // --------------------------------------------------------
 
-    walkTimer +=
-      deltaMilliseconds;
+    walkTimer += deltaMilliseconds;
 
+    while (walkTimer >= WALK_FRAME_TIME) {
 
-    while (
-      walkTimer >=
-      WALK_FRAME_TIME
-    ) {
-
-      walkTimer -=
-        WALK_FRAME_TIME;
+      walkTimer -= WALK_FRAME_TIME;
 
       walkFrame =
         (walkFrame + 1) % 4;
+
     }
 
-  }
-
-  else {
+  } else {
 
     walkFrame = 0;
     walkTimer = 0;
@@ -356,9 +290,9 @@ function update(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // SCREEN BOUNDARIES
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const image =
     moving
@@ -375,8 +309,7 @@ function update(
     x = Math.max(
       0,
       Math.min(
-        GAME_WIDTH -
-        image.naturalWidth,
+        GAME_WIDTH - image.naturalWidth,
         x
       )
     );
@@ -385,12 +318,13 @@ function update(
     y = Math.max(
       0,
       Math.min(
-        GAME_HEIGHT -
-        image.naturalHeight,
+        GAME_HEIGHT - image.naturalHeight,
         y
       )
     );
+
   }
+
 }
 
 
@@ -400,8 +334,9 @@ function update(
 
 function drawGame() {
 
-  ctx.fillStyle =
-    BACKGROUND_COLOR;
+  // Green background
+
+  ctx.fillStyle = BACKGROUND_COLOR;
 
   ctx.fillRect(
     0,
@@ -410,6 +345,8 @@ function drawGame() {
     GAME_HEIGHT
   );
 
+
+  // Character
 
   const image =
     moving
@@ -428,12 +365,54 @@ function drawGame() {
       Math.round(x),
       Math.round(y)
     );
+
   }
+
 }
 
 
 // ============================================================
-// SERENITY CRT
+// SERENITY SETTINGS
+// ============================================================
+//
+// These are YOUR settings from the demo.
+//
+
+const CRT_SETTINGS = {
+
+  enabled: true,
+
+  smoothing: true,
+
+  scanlineIntensity: 0.41,
+
+  scanlineCount: 125,
+
+  adaptiveIntensity: 0.13,
+
+  brightness: 1.53,
+
+  contrast: 1.80,
+
+  saturation: 1.30,
+
+  bloomIntensity: 1.50,
+
+  bloomThreshold: 1.00,
+
+  rgbShift: 1.00,
+
+  vignetteStrength: 0.39,
+
+  curvature: 0.145,
+
+  flickerStrength: 0.013
+
+};
+
+
+// ============================================================
+// WEBGL2
 // ============================================================
 
 const crtCanvas =
@@ -449,61 +428,397 @@ const gl =
 
 
 if (!gl) {
+
   throw new Error(
     "WebGL2 is not supported by this browser."
   );
+
 }
 
 
-// Serenity's default values.
-// These are intentionally close to the author's demo.
+// ============================================================
+// BUILD SERENITY VERTEX SHADER
+// ============================================================
 
-const CRT = {
+function buildVertexSource() {
 
-  scanlineIntensity: 0.5,
+  return `#version 300 es
 
-  // Serenity recommends matching this roughly
-  // to the source/output line count.
-  scanlineCount: 224,
+  precision highp float;
 
-  adaptiveIntensity: 0.3,
+  const vec2 pos[4] = vec2[4](
 
-  brightness: 1.5,
+    vec2(-1.0, -1.0),
+    vec2( 1.0, -1.0),
+    vec2(-1.0,  1.0),
+    vec2( 1.0,  1.0)
 
-  contrast: 1.05,
+  );
 
-  saturation: 1.1,
 
-  bloomIntensity: 0.5,
+  const vec2 uvData[4] = vec2[4](
 
-  bloomThreshold: 0.5,
+    vec2(0.0, 0.0),
+    vec2(1.0, 0.0),
+    vec2(0.0, 1.0),
+    vec2(1.0, 1.0)
 
-  rgbShift: 1.0,
+  );
 
-  vignetteStrength: 0.3,
 
-  curvature: 0.1,
+  out vec2 vUv;
 
-  flickerStrength: 0.01
-};
+
+  void main() {
+
+    vUv =
+      uvData[gl_VertexID];
+
+    gl_Position =
+      vec4(
+        pos[gl_VertexID],
+        0.0,
+        1.0
+      );
+
+  }
+
+  `;
+
+}
 
 
 // ============================================================
-// SERENITY SHADER PROGRAM
+// CONVERT SERENITY FRAGMENT SHADER FOR RAW WEBGL2
 // ============================================================
 
-const shader =
-  new CRTShader(gl);
+function buildFragmentSource() {
+
+  let body =
+    CRTShader.fragmentShader;
 
 
-// Create texture containing our game.
+  /*
+    CRTShader.js is also compatible with Three.js.
 
-const gameTexture =
+    Serenity's own raw WebGL implementation converts that
+    shader into WebGL2-compatible GLSL.
+
+    We're doing the same conversion here.
+  */
+
+
+  // Remove original uniform declarations.
+
+  body =
+    body.replace(
+      /uniform\s+[^;]+;\s*/g,
+      ""
+    );
+
+
+  // Remove old varying declarations.
+
+  body =
+    body.replace(
+      /varying\s+[^;]+;\s*/g,
+      ""
+    );
+
+
+  // Rename texture.
+
+  body =
+    body.replace(
+      /\btDiffuse\b/g,
+      "uTexture"
+    );
+
+
+  // WebGL2 texture syntax.
+
+  body =
+    body.replace(
+      /texture2D\s*\(/g,
+      "texture("
+    );
+
+
+  // WebGL2 output variable.
+
+  body =
+    body.replace(
+      /gl_FragColor/g,
+      "fragColor"
+    );
+
+
+  // Rename Serenity's original main function.
+
+  body =
+    body.replace(
+      /void main\s*\(/,
+      "void mainImage("
+    );
+
+
+  return `#version 300 es
+
+  precision highp float;
+
+  uniform sampler2D uTexture;
+
+  uniform bool uEnabled;
+
+  uniform float scanlineIntensity;
+  uniform float scanlineCount;
+
+  uniform float time;
+  uniform float yOffset;
+
+  uniform float brightness;
+  uniform float contrast;
+  uniform float saturation;
+
+  uniform float bloomIntensity;
+  uniform float bloomThreshold;
+
+  uniform float rgbShift;
+
+  uniform float adaptiveIntensity;
+
+  uniform float vignetteStrength;
+
+  uniform float curvature;
+
+  uniform float flickerStrength;
+
+
+  in vec2 vUv;
+
+  out vec4 fragColor;
+
+
+  ${body}
+
+
+  void main() {
+
+    if (!uEnabled) {
+
+      fragColor =
+        texture(
+          uTexture,
+          vUv
+        );
+
+      return;
+
+    }
+
+
+    mainImage();
+
+  }
+
+  `;
+
+}
+
+
+// ============================================================
+// COMPILE SHADER
+// ============================================================
+
+function compileShader(
+  glContext,
+  type,
+  source
+) {
+
+  const shader =
+    glContext.createShader(type);
+
+
+  glContext.shaderSource(
+    shader,
+    source
+  );
+
+
+  glContext.compileShader(shader);
+
+
+  if (
+    !glContext.getShaderParameter(
+      shader,
+      glContext.COMPILE_STATUS
+    )
+  ) {
+
+    const error =
+      glContext.getShaderInfoLog(shader);
+
+
+    console.error(source);
+
+    throw new Error(
+      error ||
+      "Shader compile error"
+    );
+
+  }
+
+
+  return shader;
+
+}
+
+
+// ============================================================
+// CREATE WEBGL PROGRAM
+// ============================================================
+
+function createProgram(
+  glContext,
+  vertexSource,
+  fragmentSource
+) {
+
+  const vertexShader =
+    compileShader(
+      glContext,
+      glContext.VERTEX_SHADER,
+      vertexSource
+    );
+
+
+  const fragmentShader =
+    compileShader(
+      glContext,
+      glContext.FRAGMENT_SHADER,
+      fragmentSource
+    );
+
+
+  const program =
+    glContext.createProgram();
+
+
+  glContext.attachShader(
+    program,
+    vertexShader
+  );
+
+
+  glContext.attachShader(
+    program,
+    fragmentShader
+  );
+
+
+  glContext.linkProgram(program);
+
+
+  if (
+    !glContext.getProgramParameter(
+      program,
+      glContext.LINK_STATUS
+    )
+  ) {
+
+    throw new Error(
+      glContext.getProgramInfoLog(program) ||
+      "Program link error"
+    );
+
+  }
+
+
+  return program;
+
+}
+
+
+// ============================================================
+// CREATE SERENITY PROGRAM
+// ============================================================
+
+const program =
+  createProgram(
+    gl,
+    buildVertexSource(),
+    buildFragmentSource()
+  );
+
+
+const vao =
+  gl.createVertexArray();
+
+
+gl.bindVertexArray(vao);
+
+
+// ============================================================
+// UNIFORMS
+// ============================================================
+
+const uniformNames = [
+
+  "uTexture",
+  "uEnabled",
+
+  "scanlineIntensity",
+  "scanlineCount",
+
+  "time",
+  "yOffset",
+
+  "brightness",
+  "contrast",
+  "saturation",
+
+  "bloomIntensity",
+  "bloomThreshold",
+
+  "rgbShift",
+
+  "adaptiveIntensity",
+
+  "vignetteStrength",
+
+  "curvature",
+
+  "flickerStrength"
+
+];
+
+
+const uniforms = {};
+
+
+for (const name of uniformNames) {
+
+  uniforms[name] =
+    gl.getUniformLocation(
+      program,
+      name
+    );
+
+}
+
+
+// ============================================================
+// GAME TEXTURE
+// ============================================================
+
+const texture =
   gl.createTexture();
+
 
 gl.bindTexture(
   gl.TEXTURE_2D,
-  gameTexture
+  texture
 );
 
 
@@ -513,6 +828,7 @@ gl.texParameteri(
   gl.CLAMP_TO_EDGE
 );
 
+
 gl.texParameteri(
   gl.TEXTURE_2D,
   gl.TEXTURE_WRAP_T,
@@ -520,25 +836,31 @@ gl.texParameteri(
 );
 
 
-/*
-  LINEAR filtering is deliberate.
+// ============================================================
+// SMOOTHING
+// ============================================================
 
-  Serenity's own demo uses smoothing as part
-  of the CRT appearance.
-*/
+const textureFilter =
+  CRT_SETTINGS.smoothing
+    ? gl.LINEAR
+    : gl.NEAREST;
+
 
 gl.texParameteri(
   gl.TEXTURE_2D,
   gl.TEXTURE_MIN_FILTER,
-  gl.LINEAR
+  textureFilter
 );
+
 
 gl.texParameteri(
   gl.TEXTURE_2D,
   gl.TEXTURE_MAG_FILTER,
-  gl.LINEAR
+  textureFilter
 );
 
+
+// Serenity flips the incoming canvas vertically.
 
 gl.pixelStorei(
   gl.UNPACK_FLIP_Y_WEBGL,
@@ -546,7 +868,7 @@ gl.pixelStorei(
 );
 
 
-// Allocate texture.
+// Allocate texture memory.
 
 gl.texImage2D(
   gl.TEXTURE_2D,
@@ -562,7 +884,167 @@ gl.texImage2D(
 
 
 // ============================================================
-// GAME LOOP
+// DRAW CRT
+// ============================================================
+
+function drawCRT(currentTime) {
+
+  // Upload current game canvas.
+
+  gl.bindTexture(
+    gl.TEXTURE_2D,
+    texture
+  );
+
+
+  gl.texSubImage2D(
+    gl.TEXTURE_2D,
+    0,
+    0,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    gameCanvas
+  );
+
+
+  // Render across entire visible canvas.
+
+  gl.viewport(
+    0,
+    0,
+    gl.drawingBufferWidth,
+    gl.drawingBufferHeight
+  );
+
+
+  gl.useProgram(program);
+
+  gl.bindVertexArray(vao);
+
+
+  gl.activeTexture(
+    gl.TEXTURE0
+  );
+
+
+  gl.bindTexture(
+    gl.TEXTURE_2D,
+    texture
+  );
+
+
+  // ----------------------------------------------------------
+  // SERENITY SETTINGS
+  // ----------------------------------------------------------
+
+  gl.uniform1i(
+    uniforms.uTexture,
+    0
+  );
+
+
+  gl.uniform1i(
+    uniforms.uEnabled,
+    CRT_SETTINGS.enabled ? 1 : 0
+  );
+
+
+  gl.uniform1f(
+    uniforms.scanlineIntensity,
+    CRT_SETTINGS.scanlineIntensity
+  );
+
+
+  gl.uniform1f(
+    uniforms.scanlineCount,
+    CRT_SETTINGS.scanlineCount
+  );
+
+
+  gl.uniform1f(
+    uniforms.time,
+    currentTime / 1000
+  );
+
+
+  gl.uniform1f(
+    uniforms.yOffset,
+    0.0
+  );
+
+
+  gl.uniform1f(
+    uniforms.brightness,
+    CRT_SETTINGS.brightness
+  );
+
+
+  gl.uniform1f(
+    uniforms.contrast,
+    CRT_SETTINGS.contrast
+  );
+
+
+  gl.uniform1f(
+    uniforms.saturation,
+    CRT_SETTINGS.saturation
+  );
+
+
+  gl.uniform1f(
+    uniforms.bloomIntensity,
+    CRT_SETTINGS.bloomIntensity
+  );
+
+
+  gl.uniform1f(
+    uniforms.bloomThreshold,
+    CRT_SETTINGS.bloomThreshold
+  );
+
+
+  gl.uniform1f(
+    uniforms.rgbShift,
+    CRT_SETTINGS.rgbShift
+  );
+
+
+  gl.uniform1f(
+    uniforms.adaptiveIntensity,
+    CRT_SETTINGS.adaptiveIntensity
+  );
+
+
+  gl.uniform1f(
+    uniforms.vignetteStrength,
+    CRT_SETTINGS.vignetteStrength
+  );
+
+
+  gl.uniform1f(
+    uniforms.curvature,
+    CRT_SETTINGS.curvature
+  );
+
+
+  gl.uniform1f(
+    uniforms.flickerStrength,
+    CRT_SETTINGS.flickerStrength
+  );
+
+
+  gl.drawArrays(
+    gl.TRIANGLE_STRIP,
+    0,
+    4
+  );
+
+}
+
+
+// ============================================================
+// MAIN GAME LOOP
 // ============================================================
 
 let previousTime =
@@ -575,9 +1057,12 @@ function gameLoop(currentTime) {
     currentTime -
     previousTime;
 
+
   previousTime =
     currentTime;
 
+
+  // Prevent huge jumps after changing tabs.
 
   deltaMilliseconds =
     Math.min(
@@ -591,9 +1076,7 @@ function gameLoop(currentTime) {
     1000;
 
 
-  // --------------------------
-  // UPDATE GAME
-  // --------------------------
+  // 1. Update game
 
   update(
     deltaTime,
@@ -601,59 +1084,26 @@ function gameLoop(currentTime) {
   );
 
 
-  // --------------------------
-  // DRAW 256×224 GAME
-  // --------------------------
+  // 2. Draw raw 256×224 game
 
   drawGame();
 
 
-  // --------------------------
-  // SEND GAME TO GPU
-  // --------------------------
+  // 3. Feed that canvas through Serenity
 
-  gl.bindTexture(
-    gl.TEXTURE_2D,
-    gameTexture
-  );
-
-
-  gl.texSubImage2D(
-    gl.TEXTURE_2D,
-    0,
-    0,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    canvas
-  );
-
-
-  // --------------------------
-  // DRAW SERENITY CRT
-  // --------------------------
-
-  shader.render(
-    gameTexture,
-    crtCanvas.width,
-    crtCanvas.height,
-    {
-      ...CRT,
-
-      time:
-        currentTime /
-        1000,
-
-      enabled: true
-    }
-  );
+  drawCRT(currentTime);
 
 
   requestAnimationFrame(
     gameLoop
   );
+
 }
 
+
+// ============================================================
+// START
+// ============================================================
 
 requestAnimationFrame(
   gameLoop
