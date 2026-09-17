@@ -1,36 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Student</title>
+<title>Student</title>
 
-  <style>
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      background: #111;
-    }
+<style>
 
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #111;
+}
 
-    #game {
-      width: 768px;
-      height: 672px;
-      display: block;
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
 
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-  </style>
+/* Original 256×224 game.
+   Serenity reads from this, but we don't display it. */
+#game {
+  display: none;
+}
+
+/* What the player actually sees */
+#crt {
+  width: 768px;
+  height: 672px;
+  display: block;
+}
+
+</style>
 </head>
 
 <body>
@@ -38,118 +44,130 @@
 <canvas
   id="game"
   width="256"
-  height="224"
-></canvas>
+  height="224">
+</canvas>
 
-<script>
-
-  // ============================================================
-  // CANVAS
-  // ============================================================
-
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
-
-  ctx.imageSmoothingEnabled = false;
+<canvas
+  id="crt"
+  width="768"
+  height="672">
+</canvas>
 
 
-  // ============================================================
-  // GAME SETTINGS
-  // ============================================================
+<script type="module">
 
-  const GAME_WIDTH = 256;
-  const GAME_HEIGHT = 224;
-
-  const MOVE_SPEED = 35;
-
-  const BACKGROUND_COLOR = "#3a9b46";
-
-  // 5 FPS = one new frame every 200 milliseconds
-  const WALK_FPS = 5;
-  const WALK_FRAME_TIME = 1000 / WALK_FPS;
+import { CRTShader } from "./CRTShader.js";
 
 
-  // ============================================================
-  // CHARACTER
-  // ============================================================
+// ============================================================
+// GAME CANVAS
+// ============================================================
 
-  let x = 120;
-  let y = 100;
+const canvas =
+  document.getElementById("game");
 
-  let lastDirection = "D";
-  let moving = false;
+const ctx =
+  canvas.getContext("2d");
 
-  let walkFrame = 0;
-  let walkTimer = 0;
-
-
-  // ============================================================
-  // DIRECTIONS
-  // ============================================================
-
-  const directions = [
-    "U",
-    "UR",
-    "R",
-    "DR",
-    "D",
-    "DL",
-    "L",
-    "UL"
-  ];
+ctx.imageSmoothingEnabled = false;
 
 
-  // ============================================================
-  // LOAD WALKING FRAMES
-  // ============================================================
+// ============================================================
+// SETTINGS
+// ============================================================
 
-  const walkImages = {};
+const GAME_WIDTH = 256;
+const GAME_HEIGHT = 224;
 
-  for (const direction of directions) {
+const MOVE_SPEED = 35;
 
-    walkImages[direction] = [];
+const BACKGROUND_COLOR =
+  "#3a9b46";
 
-    for (let frame = 0; frame < 4; frame++) {
+const WALK_FPS = 5;
 
-      const img = new Image();
-
-      img.src =
-        `../guy_walk_${direction}_${frame}.png`;
-
-      walkImages[direction].push(img);
-
-    }
-
-  }
+const WALK_FRAME_TIME =
+  1000 / WALK_FPS;
 
 
-  // ============================================================
-  // LOAD STANDING IMAGES
-  // ============================================================
+// ============================================================
+// CHARACTER
+// ============================================================
 
-  const standImages = {};
+let x = 120;
+let y = 100;
 
-  for (const direction of directions) {
+let lastDirection = "D";
+
+let moving = false;
+
+let walkFrame = 0;
+let walkTimer = 0;
+
+
+const directions = [
+  "U",
+  "UR",
+  "R",
+  "DR",
+  "D",
+  "DL",
+  "L",
+  "UL"
+];
+
+
+// ============================================================
+// WALKING FRAMES
+// ============================================================
+
+const walkImages = {};
+
+for (const direction of directions) {
+
+  walkImages[direction] = [];
+
+  for (let frame = 0; frame < 4; frame++) {
 
     const img = new Image();
 
     img.src =
-      `../guy_stand_${direction}.gif`;
+      `../guy_walk_${direction}_${frame}.png`;
 
-    standImages[direction] = img;
-
+    walkImages[direction].push(img);
   }
+}
 
 
-  // ============================================================
-  // KEYBOARD
-  // ============================================================
+// ============================================================
+// STANDING IMAGES
+// ============================================================
 
-  const keys = {};
+const standImages = {};
 
-  window.addEventListener("keydown", (event) => {
+for (const direction of directions) {
 
-    const key = event.key.toLowerCase();
+  const img = new Image();
+
+  img.src =
+    `../guy_stand_${direction}.gif`;
+
+  standImages[direction] = img;
+}
+
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+
+const keys = {};
+
+window.addEventListener(
+  "keydown",
+  event => {
+
+    const key =
+      event.key.toLowerCase();
 
     if (
       key === "arrowup" ||
@@ -161,334 +179,485 @@
     }
 
     keys[key] = true;
-
-  });
-
-
-  window.addEventListener("keyup", (event) => {
-
-    const key = event.key.toLowerCase();
-
-    keys[key] = false;
-
-  });
+  }
+);
 
 
-  window.addEventListener("blur", () => {
+window.addEventListener(
+  "keyup",
+  event => {
+
+    keys[event.key.toLowerCase()] =
+      false;
+  }
+);
+
+
+window.addEventListener(
+  "blur",
+  () => {
 
     for (const key in keys) {
       keys[key] = false;
     }
-
-  });
-
-
-  // ============================================================
-  // UPDATE
-  // ============================================================
-
-  function update(deltaTime, deltaMilliseconds) {
-
-    let dx = 0;
-    let dy = 0;
+  }
+);
 
 
-    // UP
+// ============================================================
+// UPDATE GAME
+// ============================================================
+
+function update(
+  deltaTime,
+  deltaMilliseconds
+) {
+
+  let dx = 0;
+  let dy = 0;
+
+
+  if (
+    keys["arrowup"] ||
+    keys["w"]
+  ) {
+    dy -= 1;
+  }
+
+
+  if (
+    keys["arrowdown"] ||
+    keys["s"]
+  ) {
+    dy += 1;
+  }
+
+
+  if (
+    keys["arrowleft"] ||
+    keys["a"]
+  ) {
+    dx -= 1;
+  }
+
+
+  if (
+    keys["arrowright"] ||
+    keys["d"]
+  ) {
+    dx += 1;
+  }
+
+
+  const wasMoving =
+    moving;
+
+  moving =
+    dx !== 0 ||
+    dy !== 0;
+
+
+  // ==========================================================
+  // MOVEMENT
+  // ==========================================================
+
+  if (moving) {
+
+    const length =
+      Math.sqrt(
+        dx * dx +
+        dy * dy
+      );
+
+    dx /= length;
+    dy /= length;
+
+
+    x +=
+      dx *
+      MOVE_SPEED *
+      deltaTime;
+
+    y +=
+      dy *
+      MOVE_SPEED *
+      deltaTime;
+
+
+    // Direction
+
+    let direction = "";
+
+    if (dy < 0) {
+      direction += "U";
+    }
+
+    if (dy > 0) {
+      direction += "D";
+    }
+
+    if (dx < 0) {
+      direction += "L";
+    }
+
+    if (dx > 0) {
+      direction += "R";
+    }
+
+
     if (
-      keys["arrowup"] ||
-      keys["w"]
+      direction !==
+      lastDirection
     ) {
-      dy -= 1;
-    }
-
-
-    // DOWN
-    if (
-      keys["arrowdown"] ||
-      keys["s"]
-    ) {
-      dy += 1;
-    }
-
-
-    // LEFT
-    if (
-      keys["arrowleft"] ||
-      keys["a"]
-    ) {
-      dx -= 1;
-    }
-
-
-    // RIGHT
-    if (
-      keys["arrowright"] ||
-      keys["d"]
-    ) {
-      dx += 1;
-    }
-
-
-    const wasMoving = moving;
-
-    moving =
-      dx !== 0 ||
-      dy !== 0;
-
-
-    // ==========================================================
-    // MOVING
-    // ==========================================================
-
-    if (moving) {
-
-      const length =
-        Math.sqrt(
-          dx * dx +
-          dy * dy
-        );
-
-      dx /= length;
-      dy /= length;
-
-
-      x +=
-        dx *
-        MOVE_SPEED *
-        deltaTime;
-
-      y +=
-        dy *
-        MOVE_SPEED *
-        deltaTime;
-
-
-      // Determine direction
-
-      let direction = "";
-
-      if (dy < 0) {
-        direction += "U";
-      }
-
-      if (dy > 0) {
-        direction += "D";
-      }
-
-      if (dx < 0) {
-        direction += "L";
-      }
-
-      if (dx > 0) {
-        direction += "R";
-      }
-
-
-      // If direction changed, begin its animation
-      // from frame 0.
-
-      if (direction !== lastDirection) {
-
-        walkFrame = 0;
-        walkTimer = 0;
-
-      }
-
-
-      lastDirection = direction;
-
-
-      // If we just started walking, start on frame 0.
-
-      if (!wasMoving) {
-
-        walkFrame = 0;
-        walkTimer = 0;
-
-      }
-
-
-      // ========================================================
-      // WALK ANIMATION
-      // ========================================================
-
-      walkTimer += deltaMilliseconds;
-
-
-      while (walkTimer >= WALK_FRAME_TIME) {
-
-        walkTimer -= WALK_FRAME_TIME;
-
-        walkFrame =
-          (walkFrame + 1) % 4;
-
-      }
-
-    }
-
-
-    // ==========================================================
-    // STANDING
-    // ==========================================================
-
-    else {
 
       walkFrame = 0;
       walkTimer = 0;
-
     }
 
 
-    // ==========================================================
-    // KEEP CHARACTER ON SCREEN
-    // ==========================================================
-
-    const currentImage =
-      moving
-        ? walkImages[lastDirection][walkFrame]
-        : standImages[lastDirection];
+    lastDirection =
+      direction;
 
 
-    if (
-      currentImage &&
-      currentImage.complete &&
-      currentImage.naturalWidth > 0
+    if (!wasMoving) {
+
+      walkFrame = 0;
+      walkTimer = 0;
+    }
+
+
+    // ========================================================
+    // 5 FPS WALK CYCLE
+    // ========================================================
+
+    walkTimer +=
+      deltaMilliseconds;
+
+
+    while (
+      walkTimer >=
+      WALK_FRAME_TIME
     ) {
 
-      const width =
-        currentImage.naturalWidth;
+      walkTimer -=
+        WALK_FRAME_TIME;
 
-      const height =
-        currentImage.naturalHeight;
-
-
-      x = Math.max(
-        0,
-        Math.min(
-          GAME_WIDTH - width,
-          x
-        )
-      );
-
-
-      y = Math.max(
-        0,
-        Math.min(
-          GAME_HEIGHT - height,
-          y
-        )
-      );
-
+      walkFrame =
+        (walkFrame + 1) % 4;
     }
 
   }
 
+  else {
 
-  // ============================================================
-  // DRAW
-  // ============================================================
-
-  function draw() {
-
-    // Green background
-
-    ctx.fillStyle =
-      BACKGROUND_COLOR;
-
-    ctx.fillRect(
-      0,
-      0,
-      GAME_WIDTH,
-      GAME_HEIGHT
-    );
-
-
-    // Select correct sprite
-
-    let image;
-
-    if (moving) {
-
-      image =
-        walkImages[lastDirection][walkFrame];
-
-    }
-
-    else {
-
-      image =
-        standImages[lastDirection];
-
-    }
-
-
-    // Draw character
-
-    if (
-      image &&
-      image.complete &&
-      image.naturalWidth > 0
-    ) {
-
-      ctx.drawImage(
-        image,
-        Math.round(x),
-        Math.round(y)
-      );
-
-    }
+    walkFrame = 0;
+    walkTimer = 0;
 
   }
 
 
-  // ============================================================
-  // GAME LOOP
-  // ============================================================
+  // ==========================================================
+  // SCREEN BOUNDARIES
+  // ==========================================================
 
-  let previousTime =
-    performance.now();
-
-
-  function gameLoop(currentTime) {
-
-    let deltaMilliseconds =
-      currentTime - previousTime;
-
-    previousTime =
-      currentTime;
+  const image =
+    moving
+      ? walkImages[lastDirection][walkFrame]
+      : standImages[lastDirection];
 
 
-    // Prevent giant jumps after switching tabs.
+  if (
+    image &&
+    image.complete &&
+    image.naturalWidth > 0
+  ) {
 
-    deltaMilliseconds =
+    x = Math.max(
+      0,
       Math.min(
-        deltaMilliseconds,
-        50
-      );
-
-
-    const deltaTime =
-      deltaMilliseconds / 1000;
-
-
-    update(
-      deltaTime,
-      deltaMilliseconds
+        GAME_WIDTH -
+        image.naturalWidth,
+        x
+      )
     );
 
-    draw();
 
-
-    requestAnimationFrame(gameLoop);
-
+    y = Math.max(
+      0,
+      Math.min(
+        GAME_HEIGHT -
+        image.naturalHeight,
+        y
+      )
+    );
   }
+}
 
 
-  // ============================================================
-  // START
-  // ============================================================
+// ============================================================
+// DRAW GAME
+// ============================================================
 
-  requestAnimationFrame(gameLoop);
+function drawGame() {
+
+  ctx.fillStyle =
+    BACKGROUND_COLOR;
+
+  ctx.fillRect(
+    0,
+    0,
+    GAME_WIDTH,
+    GAME_HEIGHT
+  );
+
+
+  const image =
+    moving
+      ? walkImages[lastDirection][walkFrame]
+      : standImages[lastDirection];
+
+
+  if (
+    image &&
+    image.complete &&
+    image.naturalWidth > 0
+  ) {
+
+    ctx.drawImage(
+      image,
+      Math.round(x),
+      Math.round(y)
+    );
+  }
+}
+
+
+// ============================================================
+// SERENITY CRT
+// ============================================================
+
+const crtCanvas =
+  document.getElementById("crt");
+
+const gl =
+  crtCanvas.getContext(
+    "webgl2",
+    {
+      alpha: false
+    }
+  );
+
+
+if (!gl) {
+  throw new Error(
+    "WebGL2 is not supported by this browser."
+  );
+}
+
+
+// Serenity's default values.
+// These are intentionally close to the author's demo.
+
+const CRT = {
+
+  scanlineIntensity: 0.5,
+
+  // Serenity recommends matching this roughly
+  // to the source/output line count.
+  scanlineCount: 224,
+
+  adaptiveIntensity: 0.3,
+
+  brightness: 1.5,
+
+  contrast: 1.05,
+
+  saturation: 1.1,
+
+  bloomIntensity: 0.5,
+
+  bloomThreshold: 0.5,
+
+  rgbShift: 1.0,
+
+  vignetteStrength: 0.3,
+
+  curvature: 0.1,
+
+  flickerStrength: 0.01
+};
+
+
+// ============================================================
+// SERENITY SHADER PROGRAM
+// ============================================================
+
+const shader =
+  new CRTShader(gl);
+
+
+// Create texture containing our game.
+
+const gameTexture =
+  gl.createTexture();
+
+gl.bindTexture(
+  gl.TEXTURE_2D,
+  gameTexture
+);
+
+
+gl.texParameteri(
+  gl.TEXTURE_2D,
+  gl.TEXTURE_WRAP_S,
+  gl.CLAMP_TO_EDGE
+);
+
+gl.texParameteri(
+  gl.TEXTURE_2D,
+  gl.TEXTURE_WRAP_T,
+  gl.CLAMP_TO_EDGE
+);
+
+
+/*
+  LINEAR filtering is deliberate.
+
+  Serenity's own demo uses smoothing as part
+  of the CRT appearance.
+*/
+
+gl.texParameteri(
+  gl.TEXTURE_2D,
+  gl.TEXTURE_MIN_FILTER,
+  gl.LINEAR
+);
+
+gl.texParameteri(
+  gl.TEXTURE_2D,
+  gl.TEXTURE_MAG_FILTER,
+  gl.LINEAR
+);
+
+
+gl.pixelStorei(
+  gl.UNPACK_FLIP_Y_WEBGL,
+  true
+);
+
+
+// Allocate texture.
+
+gl.texImage2D(
+  gl.TEXTURE_2D,
+  0,
+  gl.RGBA,
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  0,
+  gl.RGBA,
+  gl.UNSIGNED_BYTE,
+  null
+);
+
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+
+let previousTime =
+  performance.now();
+
+
+function gameLoop(currentTime) {
+
+  let deltaMilliseconds =
+    currentTime -
+    previousTime;
+
+  previousTime =
+    currentTime;
+
+
+  deltaMilliseconds =
+    Math.min(
+      deltaMilliseconds,
+      50
+    );
+
+
+  const deltaTime =
+    deltaMilliseconds /
+    1000;
+
+
+  // --------------------------
+  // UPDATE GAME
+  // --------------------------
+
+  update(
+    deltaTime,
+    deltaMilliseconds
+  );
+
+
+  // --------------------------
+  // DRAW 256×224 GAME
+  // --------------------------
+
+  drawGame();
+
+
+  // --------------------------
+  // SEND GAME TO GPU
+  // --------------------------
+
+  gl.bindTexture(
+    gl.TEXTURE_2D,
+    gameTexture
+  );
+
+
+  gl.texSubImage2D(
+    gl.TEXTURE_2D,
+    0,
+    0,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    canvas
+  );
+
+
+  // --------------------------
+  // DRAW SERENITY CRT
+  // --------------------------
+
+  shader.render(
+    gameTexture,
+    crtCanvas.width,
+    crtCanvas.height,
+    {
+      ...CRT,
+
+      time:
+        currentTime /
+        1000,
+
+      enabled: true
+    }
+  );
+
+
+  requestAnimationFrame(
+    gameLoop
+  );
+}
+
+
+requestAnimationFrame(
+  gameLoop
+);
 
 </script>
 
