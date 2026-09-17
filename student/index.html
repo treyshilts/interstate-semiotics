@@ -22,428 +22,475 @@
       overflow: hidden;
     }
 
-    /*
-      The actual game is 256 × 224.
-
-      CSS enlarges it exactly 3×:
-      256 × 3 = 768
-      224 × 3 = 672
-    */
     #game {
       width: 768px;
       height: 672px;
+      display: block;
 
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-
-      display: block;
     }
   </style>
 </head>
 
 <body>
 
-  <canvas
-    id="game"
-    width="256"
-    height="224"
-  ></canvas>
+<canvas
+  id="game"
+  width="256"
+  height="224"
+></canvas>
+
+<script>
+
+  // ============================================================
+  // CANVAS
+  // ============================================================
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  ctx.imageSmoothingEnabled = false;
 
 
-  <script>
-    // ============================================================
-    // CANVAS
-    // ============================================================
+  // ============================================================
+  // GAME SETTINGS
+  // ============================================================
 
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
+  const GAME_WIDTH = 256;
+  const GAME_HEIGHT = 224;
 
-    // Absolutely essential for pixel art.
-    ctx.imageSmoothingEnabled = false;
+  const MOVE_SPEED = 35;
 
+  const BACKGROUND_COLOR = "#3a9b46";
 
-    // ============================================================
-    // GAME SETTINGS
-    // ============================================================
-
-    const GAME_WIDTH = 256;
-    const GAME_HEIGHT = 224;
-
-    // Character movement speed in game pixels per second.
-    // Lower = slower.
-    const MOVE_SPEED = 35;
-
-    // Background color.
-    const BACKGROUND_COLOR = "#3a9b46";
+  // 5 FPS = one new frame every 200 milliseconds
+  const WALK_FPS = 5;
+  const WALK_FRAME_TIME = 1000 / WALK_FPS;
 
 
-    // ============================================================
-    // CHARACTER
-    // ============================================================
+  // ============================================================
+  // CHARACTER
+  // ============================================================
 
-    let x = 120;
-    let y = 100;
+  let x = 120;
+  let y = 100;
 
-    // Character begins facing downward.
-    let lastDirection = "D";
+  let lastDirection = "D";
+  let moving = false;
 
-    let moving = false;
-
-
-    // ============================================================
-    // IMAGE FILES
-    // ============================================================
-
-    /*
-      index.html is inside /student/
-
-      Your character GIFs are in the main/root directory.
-
-      ../ means:
-      "go up one directory"
-    */
-
-    const walkFiles = {
-      U:  "../guy_walk_U.gif",
-      UR: "../guy_walk_UR.gif",
-      R:  "../guy_walk_R.gif",
-      DR: "../guy_walk_DR.gif",
-      D:  "../guy_walk_D.gif",
-      DL: "../guy_walk_DL.gif",
-      L:  "../guy_walk_L.gif",
-      UL: "../guy_walk_UL.gif"
-    };
-
-    const standFiles = {
-      U:  "../guy_stand_U.gif",
-      UR: "../guy_stand_UR.gif",
-      R:  "../guy_stand_R.gif",
-      DR: "../guy_stand_DR.gif",
-      D:  "../guy_stand_D.gif",
-      DL: "../guy_stand_DL.gif",
-      L:  "../guy_stand_L.gif",
-      UL: "../guy_stand_UL.gif"
-    };
+  let walkFrame = 0;
+  let walkTimer = 0;
 
 
-    // ============================================================
-    // LOAD IMAGES
-    // ============================================================
+  // ============================================================
+  // DIRECTIONS
+  // ============================================================
 
-    const walkImages = {};
-    const standImages = {};
+  const directions = [
+    "U",
+    "UR",
+    "R",
+    "DR",
+    "D",
+    "DL",
+    "L",
+    "UL"
+  ];
 
-    function loadImages() {
 
-      for (const direction in walkFiles) {
-        const img = new Image();
-        img.src = walkFiles[direction];
+  // ============================================================
+  // LOAD WALKING FRAMES
+  // ============================================================
 
-        walkImages[direction] = img;
-      }
+  const walkImages = {};
 
-      for (const direction in standFiles) {
-        const img = new Image();
-        img.src = standFiles[direction];
+  for (const direction of directions) {
 
-        standImages[direction] = img;
-      }
+    walkImages[direction] = [];
+
+    for (let frame = 0; frame < 4; frame++) {
+
+      const img = new Image();
+
+      img.src =
+        `../guy_walk_${direction}_${frame}.png`;
+
+      walkImages[direction].push(img);
+
     }
 
-    loadImages();
+  }
 
 
-    // ============================================================
-    // KEYBOARD INPUT
-    // ============================================================
+  // ============================================================
+  // LOAD STANDING IMAGES
+  // ============================================================
 
-    const keys = {};
+  const standImages = {};
 
-    window.addEventListener("keydown", (event) => {
+  for (const direction of directions) {
 
-      const key = event.key.toLowerCase();
+    const img = new Image();
 
-      // Stop arrow keys from scrolling the webpage.
-      if (
-        key === "arrowup" ||
-        key === "arrowdown" ||
-        key === "arrowleft" ||
-        key === "arrowright"
-      ) {
-        event.preventDefault();
-      }
+    img.src =
+      `../guy_stand_${direction}.gif`;
 
-      keys[key] = true;
-    });
+    standImages[direction] = img;
+
+  }
 
 
-    window.addEventListener("keyup", (event) => {
+  // ============================================================
+  // KEYBOARD
+  // ============================================================
 
-      const key = event.key.toLowerCase();
+  const keys = {};
 
+  window.addEventListener("keydown", (event) => {
+
+    const key = event.key.toLowerCase();
+
+    if (
+      key === "arrowup" ||
+      key === "arrowdown" ||
+      key === "arrowleft" ||
+      key === "arrowright"
+    ) {
+      event.preventDefault();
+    }
+
+    keys[key] = true;
+
+  });
+
+
+  window.addEventListener("keyup", (event) => {
+
+    const key = event.key.toLowerCase();
+
+    keys[key] = false;
+
+  });
+
+
+  window.addEventListener("blur", () => {
+
+    for (const key in keys) {
       keys[key] = false;
-    });
+    }
+
+  });
 
 
-    // If you click away from the browser, stop movement.
-    window.addEventListener("blur", () => {
+  // ============================================================
+  // UPDATE
+  // ============================================================
 
-      for (const key in keys) {
-        keys[key] = false;
-      }
+  function update(deltaTime, deltaMilliseconds) {
 
-    });
-
-
-    // ============================================================
-    // UPDATE CHARACTER
-    // ============================================================
-
-    function update(deltaTime) {
-
-      let dx = 0;
-      let dy = 0;
+    let dx = 0;
+    let dy = 0;
 
 
-      // UP
-      if (
-        keys["arrowup"] ||
-        keys["w"]
-      ) {
-        dy -= 1;
-      }
+    // UP
+    if (
+      keys["arrowup"] ||
+      keys["w"]
+    ) {
+      dy -= 1;
+    }
 
 
-      // DOWN
-      if (
-        keys["arrowdown"] ||
-        keys["s"]
-      ) {
-        dy += 1;
-      }
+    // DOWN
+    if (
+      keys["arrowdown"] ||
+      keys["s"]
+    ) {
+      dy += 1;
+    }
 
 
-      // LEFT
-      if (
-        keys["arrowleft"] ||
-        keys["a"]
-      ) {
-        dx -= 1;
-      }
+    // LEFT
+    if (
+      keys["arrowleft"] ||
+      keys["a"]
+    ) {
+      dx -= 1;
+    }
 
 
-      // RIGHT
-      if (
-        keys["arrowright"] ||
-        keys["d"]
-      ) {
-        dx += 1;
-      }
+    // RIGHT
+    if (
+      keys["arrowright"] ||
+      keys["d"]
+    ) {
+      dx += 1;
+    }
 
 
-      moving = dx !== 0 || dy !== 0;
+    const wasMoving = moving;
+
+    moving =
+      dx !== 0 ||
+      dy !== 0;
 
 
-      // ==========================================================
-      // MOVEMENT
-      // ==========================================================
+    // ==========================================================
+    // MOVING
+    // ==========================================================
 
-      if (moving) {
+    if (moving) {
 
-        /*
-          Normalize movement.
-
-          Without this, diagonal movement would be approximately
-          1.414× faster than horizontal/vertical movement.
-        */
-
-        const length = Math.sqrt(
+      const length =
+        Math.sqrt(
           dx * dx +
           dy * dy
         );
 
-        dx /= length;
-        dy /= length;
+      dx /= length;
+      dy /= length;
 
 
-        x += dx * MOVE_SPEED * deltaTime;
-        y += dy * MOVE_SPEED * deltaTime;
+      x +=
+        dx *
+        MOVE_SPEED *
+        deltaTime;
+
+      y +=
+        dy *
+        MOVE_SPEED *
+        deltaTime;
 
 
-        // ========================================================
-        // DETERMINE DIRECTION
-        // ========================================================
+      // Determine direction
 
-        let direction = "";
+      let direction = "";
 
-        if (dy < 0) {
-          direction += "U";
-        }
+      if (dy < 0) {
+        direction += "U";
+      }
 
-        if (dy > 0) {
-          direction += "D";
-        }
+      if (dy > 0) {
+        direction += "D";
+      }
 
-        if (dx < 0) {
-          direction += "L";
-        }
+      if (dx < 0) {
+        direction += "L";
+      }
 
-        if (dx > 0) {
-          direction += "R";
-        }
-
-
-        lastDirection = direction;
+      if (dx > 0) {
+        direction += "R";
       }
 
 
-      // ==========================================================
-      // KEEP CHARACTER INSIDE GAME
-      // ==========================================================
+      // If direction changed, begin its animation
+      // from frame 0.
 
-      /*
-        Use whichever image we're currently displaying to
-        determine the character dimensions.
-      */
+      if (direction !== lastDirection) {
 
-      const image = moving
-        ? walkImages[lastDirection]
+        walkFrame = 0;
+        walkTimer = 0;
+
+      }
+
+
+      lastDirection = direction;
+
+
+      // If we just started walking, start on frame 0.
+
+      if (!wasMoving) {
+
+        walkFrame = 0;
+        walkTimer = 0;
+
+      }
+
+
+      // ========================================================
+      // WALK ANIMATION
+      // ========================================================
+
+      walkTimer += deltaMilliseconds;
+
+
+      while (walkTimer >= WALK_FRAME_TIME) {
+
+        walkTimer -= WALK_FRAME_TIME;
+
+        walkFrame =
+          (walkFrame + 1) % 4;
+
+      }
+
+    }
+
+
+    // ==========================================================
+    // STANDING
+    // ==========================================================
+
+    else {
+
+      walkFrame = 0;
+      walkTimer = 0;
+
+    }
+
+
+    // ==========================================================
+    // KEEP CHARACTER ON SCREEN
+    // ==========================================================
+
+    const currentImage =
+      moving
+        ? walkImages[lastDirection][walkFrame]
         : standImages[lastDirection];
 
 
-      if (image && image.complete) {
+    if (
+      currentImage &&
+      currentImage.complete &&
+      currentImage.naturalWidth > 0
+    ) {
 
-        const width = image.naturalWidth;
-        const height = image.naturalHeight;
+      const width =
+        currentImage.naturalWidth;
 
-
-        x = Math.max(
-          0,
-          Math.min(
-            GAME_WIDTH - width,
-            x
-          )
-        );
+      const height =
+        currentImage.naturalHeight;
 
 
-        y = Math.max(
-          0,
-          Math.min(
-            GAME_HEIGHT - height,
-            y
-          )
-        );
-
-      }
-
-    }
-
-
-    // ============================================================
-    // DRAW
-    // ============================================================
-
-    function draw() {
-
-      // ----------------------------------------------------------
-      // GREEN BACKGROUND
-      // ----------------------------------------------------------
-
-      ctx.fillStyle = BACKGROUND_COLOR;
-
-      ctx.fillRect(
+      x = Math.max(
         0,
-        0,
-        GAME_WIDTH,
-        GAME_HEIGHT
+        Math.min(
+          GAME_WIDTH - width,
+          x
+        )
       );
 
 
-      // ----------------------------------------------------------
-      // SELECT CHARACTER IMAGE
-      // ----------------------------------------------------------
+      y = Math.max(
+        0,
+        Math.min(
+          GAME_HEIGHT - height,
+          y
+        )
+      );
 
-      let image;
+    }
 
-      if (moving) {
-
-        image = walkImages[lastDirection];
-
-      } else {
-
-        image = standImages[lastDirection];
-
-      }
+  }
 
 
-      // ----------------------------------------------------------
-      // DRAW CHARACTER
-      // ----------------------------------------------------------
+  // ============================================================
+  // DRAW
+  // ============================================================
 
-      if (
-        image &&
-        image.complete &&
-        image.naturalWidth > 0
-      ) {
+  function draw() {
 
-        /*
-          Math.round() ensures that the character always lands
-          exactly on the game's pixel grid.
-        */
+    // Green background
 
-        ctx.drawImage(
-          image,
-          Math.round(x),
-          Math.round(y)
-        );
+    ctx.fillStyle =
+      BACKGROUND_COLOR;
 
-      }
+    ctx.fillRect(
+      0,
+      0,
+      GAME_WIDTH,
+      GAME_HEIGHT
+    );
+
+
+    // Select correct sprite
+
+    let image;
+
+    if (moving) {
+
+      image =
+        walkImages[lastDirection][walkFrame];
+
+    }
+
+    else {
+
+      image =
+        standImages[lastDirection];
 
     }
 
 
-    // ============================================================
-    // GAME LOOP
-    // ============================================================
+    // Draw character
 
-    let previousTime = performance.now();
+    if (
+      image &&
+      image.complete &&
+      image.naturalWidth > 0
+    ) {
+
+      ctx.drawImage(
+        image,
+        Math.round(x),
+        Math.round(y)
+      );
+
+    }
+
+  }
 
 
-    function gameLoop(currentTime) {
+  // ============================================================
+  // GAME LOOP
+  // ============================================================
 
-      let deltaTime =
-        (currentTime - previousTime) / 1000;
-
-      previousTime = currentTime;
+  let previousTime =
+    performance.now();
 
 
-      /*
-        Prevent a huge movement jump if the browser tab freezes,
-        computer sleeps, DevTools pauses execution, etc.
-      */
+  function gameLoop(currentTime) {
 
-      deltaTime = Math.min(
-        deltaTime,
-        0.05
+    let deltaMilliseconds =
+      currentTime - previousTime;
+
+    previousTime =
+      currentTime;
+
+
+    // Prevent giant jumps after switching tabs.
+
+    deltaMilliseconds =
+      Math.min(
+        deltaMilliseconds,
+        50
       );
 
 
-      update(deltaTime);
-
-      draw();
-
-
-      requestAnimationFrame(gameLoop);
-    }
+    const deltaTime =
+      deltaMilliseconds / 1000;
 
 
-    // ============================================================
-    // START
-    // ============================================================
+    update(
+      deltaTime,
+      deltaMilliseconds
+    );
+
+    draw();
+
 
     requestAnimationFrame(gameLoop);
 
-  </script>
+  }
+
+
+  // ============================================================
+  // START
+  // ============================================================
+
+  requestAnimationFrame(gameLoop);
+
+</script>
 
 </body>
 </html>
