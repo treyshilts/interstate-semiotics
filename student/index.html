@@ -10,106 +10,100 @@
     html,
     body {
       margin: 0;
-      min-height: 100%;
+      width: 100%;
+      height: 100%;
+      background: #111;
     }
 
     body {
-      background: #111;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      overflow: hidden;
     }
 
     /*
+      The actual game is 256 × 224.
+
+      CSS enlarges it exactly 3×:
+      256 × 3 = 768
+      224 × 3 = 672
     */
     #game {
       width: 768px;
       height: 672px;
 
-      background: #3a9b46;
-
       image-rendering: pixelated;
       image-rendering: crisp-edges;
 
-      position: relative;
-      overflow: hidden;
-    }
-
-    /*
-      The coordinate system inside this element remains 256 × 224.
-      We scale the whole thing by exactly 3×.
-    */
-    #game-world {
-      width: 256px;
-      height: 224px;
-
-      position: absolute;
-      left: 0;
-      top: 0;
-
-      transform: scale(3);
-      transform-origin: top left;
-
-      image-rendering: pixelated;
-    }
-
-    #guy {
-      position: absolute;
-
-      /* Starting position */
-      left: 120px;
-      top: 100px;
-
-      image-rendering: pixelated;
-
-      /*
-        Do NOT set width/height here unless you want to
-        change the character's native GIF dimensions.
-      */
+      display: block;
     }
   </style>
 </head>
 
 <body>
 
-  <div id="game">
-    <div id="game-world">
-      <img id="guy" src="../guy_stand_D.gif" alt="">
-    </div>
-  </div>
+  <canvas
+    id="game"
+    width="256"
+    height="224"
+  ></canvas>
 
 
   <script>
-    const guy = document.getElementById("guy");
+    // ============================================================
+    // CANVAS
+    // ============================================================
 
-    // ------------------------------------
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    // Absolutely essential for pixel art.
+    ctx.imageSmoothingEnabled = false;
+
+
+    // ============================================================
     // GAME SETTINGS
-    // ------------------------------------
+    // ============================================================
 
     const GAME_WIDTH = 256;
     const GAME_HEIGHT = 224;
 
-    // Pixels traveled per second.
-    // Change this if he feels too fast/slow.
+    // Character movement speed in game pixels per second.
+    // Lower = slower.
     const MOVE_SPEED = 35;
 
+    // Background color.
+    const BACKGROUND_COLOR = "#3a9b46";
 
-    // ------------------------------------
-    // CHARACTER POSITION
-    // ------------------------------------
+
+    // ============================================================
+    // CHARACTER
+    // ============================================================
 
     let x = 120;
     let y = 100;
 
+    // Character begins facing downward.
     let lastDirection = "D";
 
+    let moving = false;
 
-    // ------------------------------------
-    // DIRECTIONAL GIFS
-    // ------------------------------------
 
-    const animations = {
+    // ============================================================
+    // IMAGE FILES
+    // ============================================================
+
+    /*
+      index.html is inside /student/
+
+      Your character GIFs are in the main/root directory.
+
+      ../ means:
+      "go up one directory"
+    */
+
+    const walkFiles = {
       U:  "../guy_walk_U.gif",
       UR: "../guy_walk_UR.gif",
       R:  "../guy_walk_R.gif",
@@ -120,7 +114,7 @@
       UL: "../guy_walk_UL.gif"
     };
 
-    const standing = {
+    const standFiles = {
       U:  "../guy_stand_U.gif",
       UR: "../guy_stand_UR.gif",
       R:  "../guy_stand_R.gif",
@@ -131,149 +125,321 @@
       UL: "../guy_stand_UL.gif"
     };
 
-    // ------------------------------------
+
+    // ============================================================
+    // LOAD IMAGES
+    // ============================================================
+
+    const walkImages = {};
+    const standImages = {};
+
+    function loadImages() {
+
+      for (const direction in walkFiles) {
+        const img = new Image();
+        img.src = walkFiles[direction];
+
+        walkImages[direction] = img;
+      }
+
+      for (const direction in standFiles) {
+        const img = new Image();
+        img.src = standFiles[direction];
+
+        standImages[direction] = img;
+      }
+    }
+
+    loadImages();
+
+
+    // ============================================================
     // KEYBOARD INPUT
-    // ------------------------------------
+    // ============================================================
 
     const keys = {};
 
-    window.addEventListener("keydown", event => {
+    window.addEventListener("keydown", (event) => {
 
+      const key = event.key.toLowerCase();
+
+      // Stop arrow keys from scrolling the webpage.
       if (
-        event.key === "ArrowUp" ||
-        event.key === "ArrowDown" ||
-        event.key === "ArrowLeft" ||
-        event.key === "ArrowRight"
+        key === "arrowup" ||
+        key === "arrowdown" ||
+        key === "arrowleft" ||
+        key === "arrowright"
       ) {
         event.preventDefault();
       }
 
-      keys[event.key] = true;
+      keys[key] = true;
     });
 
 
-    window.addEventListener("keyup", event => {
-      keys[event.key] = false;
+    window.addEventListener("keyup", (event) => {
+
+      const key = event.key.toLowerCase();
+
+      keys[key] = false;
     });
 
 
-    // ------------------------------------
-    // ANIMATION
-    // ------------------------------------
+    // If you click away from the browser, stop movement.
+    window.addEventListener("blur", () => {
 
-    let currentAnimation = "";
-
-    function setAnimation(direction) {
-
-      const filename = animations[direction];
-
-      if (currentAnimation !== filename) {
-        guy.src = filename;
-        currentAnimation = filename;
+      for (const key in keys) {
+        keys[key] = false;
       }
-    }
+
+    });
 
 
-    // ------------------------------------
-    // GAME LOOP
-    // ------------------------------------
+    // ============================================================
+    // UPDATE CHARACTER
+    // ============================================================
 
-    let previousTime = performance.now();
-
-    function gameLoop(currentTime) {
-
-      const deltaTime = (currentTime - previousTime) / 1000;
-      previousTime = currentTime;
-
+    function update(deltaTime) {
 
       let dx = 0;
       let dy = 0;
 
 
-      // Arrow keys AND WASD work.
-
-      if (keys["ArrowUp"] || keys["w"] || keys["W"]) {
+      // UP
+      if (
+        keys["arrowup"] ||
+        keys["w"]
+      ) {
         dy -= 1;
       }
 
-      if (keys["ArrowDown"] || keys["s"] || keys["S"]) {
+
+      // DOWN
+      if (
+        keys["arrowdown"] ||
+        keys["s"]
+      ) {
         dy += 1;
       }
 
-      if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
+
+      // LEFT
+      if (
+        keys["arrowleft"] ||
+        keys["a"]
+      ) {
         dx -= 1;
       }
 
-      if (keys["ArrowRight"] || keys["d"] || keys["D"]) {
+
+      // RIGHT
+      if (
+        keys["arrowright"] ||
+        keys["d"]
+      ) {
         dx += 1;
       }
 
 
-      const moving = dx !== 0 || dy !== 0;
+      moving = dx !== 0 || dy !== 0;
 
 
-  if (moving) {
-  
-    // Normalize diagonal movement so diagonal isn't faster.
-    const length = Math.sqrt(dx * dx + dy * dy);
-  
-    dx /= length;
-    dy /= length;
-  
-    x += dx * MOVE_SPEED * deltaTime;
-    y += dy * MOVE_SPEED * deltaTime;
-  
-    let direction = "";
-  
-    if (dy < 0) direction += "U";
-    if (dy > 0) direction += "D";
-    if (dx < 0) direction += "L";
-    if (dx > 0) direction += "R";
-  
-    lastDirection = direction;
-  
-    setAnimation(direction);
-  
-  } else {
-  
-    // Not moving: stand facing the last direction traveled.
-    const filename = standing[lastDirection];
-  
-    if (currentAnimation !== filename) {
-      guy.src = filename;
-      currentAnimation = filename;
+      // ==========================================================
+      // MOVEMENT
+      // ==========================================================
+
+      if (moving) {
+
+        /*
+          Normalize movement.
+
+          Without this, diagonal movement would be approximately
+          1.414× faster than horizontal/vertical movement.
+        */
+
+        const length = Math.sqrt(
+          dx * dx +
+          dy * dy
+        );
+
+        dx /= length;
+        dy /= length;
+
+
+        x += dx * MOVE_SPEED * deltaTime;
+        y += dy * MOVE_SPEED * deltaTime;
+
+
+        // ========================================================
+        // DETERMINE DIRECTION
+        // ========================================================
+
+        let direction = "";
+
+        if (dy < 0) {
+          direction += "U";
+        }
+
+        if (dy > 0) {
+          direction += "D";
+        }
+
+        if (dx < 0) {
+          direction += "L";
+        }
+
+        if (dx > 0) {
+          direction += "R";
+        }
+
+
+        lastDirection = direction;
+      }
+
+
+      // ==========================================================
+      // KEEP CHARACTER INSIDE GAME
+      // ==========================================================
+
+      /*
+        Use whichever image we're currently displaying to
+        determine the character dimensions.
+      */
+
+      const image = moving
+        ? walkImages[lastDirection]
+        : standImages[lastDirection];
+
+
+      if (image && image.complete) {
+
+        const width = image.naturalWidth;
+        const height = image.naturalHeight;
+
+
+        x = Math.max(
+          0,
+          Math.min(
+            GAME_WIDTH - width,
+            x
+          )
+        );
+
+
+        y = Math.max(
+          0,
+          Math.min(
+            GAME_HEIGHT - height,
+            y
+          )
+        );
+
+      }
+
     }
-  }
 
 
-      // ------------------------------------
-      // KEEP CHARACTER INSIDE SCREEN
-      // ------------------------------------
+    // ============================================================
+    // DRAW
+    // ============================================================
 
-      const guyWidth = guy.naturalWidth || 16;
-      const guyHeight = guy.naturalHeight || 16;
+    function draw() {
 
-      x = Math.max(
+      // ----------------------------------------------------------
+      // GREEN BACKGROUND
+      // ----------------------------------------------------------
+
+      ctx.fillStyle = BACKGROUND_COLOR;
+
+      ctx.fillRect(
         0,
-        Math.min(GAME_WIDTH - guyWidth, x)
+        0,
+        GAME_WIDTH,
+        GAME_HEIGHT
       );
 
-      y = Math.max(
-        0,
-        Math.min(GAME_HEIGHT - guyHeight, y)
+
+      // ----------------------------------------------------------
+      // SELECT CHARACTER IMAGE
+      // ----------------------------------------------------------
+
+      let image;
+
+      if (moving) {
+
+        image = walkImages[lastDirection];
+
+      } else {
+
+        image = standImages[lastDirection];
+
+      }
+
+
+      // ----------------------------------------------------------
+      // DRAW CHARACTER
+      // ----------------------------------------------------------
+
+      if (
+        image &&
+        image.complete &&
+        image.naturalWidth > 0
+      ) {
+
+        /*
+          Math.round() ensures that the character always lands
+          exactly on the game's pixel grid.
+        */
+
+        ctx.drawImage(
+          image,
+          Math.round(x),
+          Math.round(y)
+        );
+
+      }
+
+    }
+
+
+    // ============================================================
+    // GAME LOOP
+    // ============================================================
+
+    let previousTime = performance.now();
+
+
+    function gameLoop(currentTime) {
+
+      let deltaTime =
+        (currentTime - previousTime) / 1000;
+
+      previousTime = currentTime;
+
+
+      /*
+        Prevent a huge movement jump if the browser tab freezes,
+        computer sleeps, DevTools pauses execution, etc.
+      */
+
+      deltaTime = Math.min(
+        deltaTime,
+        0.05
       );
 
 
-      // Round to whole pixels.
-      // This prevents subpixel blur.
+      update(deltaTime);
 
-      guy.style.left = Math.round(x) + "px";
-      guy.style.top = Math.round(y) + "px";
+      draw();
 
 
       requestAnimationFrame(gameLoop);
     }
 
+
+    // ============================================================
+    // START
+    // ============================================================
 
     requestAnimationFrame(gameLoop);
 
