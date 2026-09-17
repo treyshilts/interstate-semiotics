@@ -22,10 +22,6 @@
     }
 
     /*
-      The game itself is 256 × 224.
-
-      CSS makes it appear larger, but the browser still renders
-      the game at the original NES-like resolution.
     */
     #game {
       width: 768px;
@@ -79,7 +75,7 @@
 
   <div id="game">
     <div id="game-world">
-      <img id="guy" src="../guy_walk_D.gif" alt="">
+      <img id="guy" src="../guy_stand_D.gif" alt="">
     </div>
   </div>
 
@@ -124,6 +120,16 @@
       UL: "../guy_walk_UL.gif"
     };
 
+    const standing = {
+      U:  "../guy_stand_U.gif",
+      UR: "../guy_stand_UR.gif",
+      R:  "../guy_stand_R.gif",
+      DR: "../guy_stand_DR.gif",
+      D:  "../guy_stand_D.gif",
+      DL: "../guy_stand_DL.gif",
+      L:  "../guy_stand_L.gif",
+      UL: "../guy_stand_UL.gif"
+    };
 
     // ------------------------------------
     // KEYBOARD INPUT
@@ -206,33 +212,38 @@
       const moving = dx !== 0 || dy !== 0;
 
 
-      if (moving) {
-
-        // Normalize diagonal movement so diagonal isn't faster.
-        const length = Math.sqrt(dx * dx + dy * dy);
-
-        dx /= length;
-        dy /= length;
-
-
-        x += dx * MOVE_SPEED * deltaTime;
-        y += dy * MOVE_SPEED * deltaTime;
-
-
-        // Figure out which directional animation to use.
-
-        let direction = "";
-
-        if (dy < 0) direction += "U";
-        if (dy > 0) direction += "D";
-        if (dx < 0) direction += "L";
-        if (dx > 0) direction += "R";
-
-
-        lastDirection = direction;
-
-        setAnimation(direction);
-      }
+  if (moving) {
+  
+    // Normalize diagonal movement so diagonal isn't faster.
+    const length = Math.sqrt(dx * dx + dy * dy);
+  
+    dx /= length;
+    dy /= length;
+  
+    x += dx * MOVE_SPEED * deltaTime;
+    y += dy * MOVE_SPEED * deltaTime;
+  
+    let direction = "";
+  
+    if (dy < 0) direction += "U";
+    if (dy > 0) direction += "D";
+    if (dx < 0) direction += "L";
+    if (dx > 0) direction += "R";
+  
+    lastDirection = direction;
+  
+    setAnimation(direction);
+  
+  } else {
+  
+    // Not moving: stand facing the last direction traveled.
+    const filename = standing[lastDirection];
+  
+    if (currentAnimation !== filename) {
+      guy.src = filename;
+      currentAnimation = filename;
+    }
+  }
 
 
       // ------------------------------------
